@@ -1,0 +1,456 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/FileSaver.js/2.0.5/FileSaver.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+<style>
+    body { min-height: max(884px, 100dvh); font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    .headline-medium { font-size: 1.75rem; line-height: 2.25rem; font-weight: 700; }
+    .title-medium { font-size: 1.125rem; line-height: 1.75rem; font-weight: 600; }
+    .label-medium { font-size: 0.75rem; line-height: 1rem; font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .body-large { font-size: 1rem; line-height: 1.5rem; }
+</style>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary": "#004d64",
+                    "primary-container": "#006684",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-container-high": "#e7e8e9",
+                    "surface-container-highest": "#e1e3e4",
+                    "surface": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "on-surface-variant": "#3f484d",
+                    "secondary": "#555f69",
+                    "outline-variant": "#bfc8cd",
+                }
+            }
+        }
+    }
+</script>
+</head>
+<body class="bg-surface text-on-surface antialiased pb-32 hidden" id="page-body">
+
+<header class="w-full top-0 sticky bg-[#f8f9fa] dark:bg-[#191c1d] z-50">
+    <div class="flex items-center px-4 h-16 w-full max-w-7xl mx-auto">
+        <button onclick="window.location.href='elenco_trasferte.html'" class="p-2 mr-2 rounded-full hover:bg-[#f1f3f4] transition-colors active:scale-95 duration-200 cursor-pointer">
+            <span class="material-symbols-outlined text-[#004d64]">arrow_back</span>
+        </button>
+        <h1 class="headline-medium tracking-tight text-[#004d64] text-lg lg:text-xl">Dettaglio Trasferta</h1>
+        <div class="ml-auto flex items-center gap-2">
+            <span id="tripStatus" class="bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase">In Corso</span>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-7xl mx-auto px-4 md:px-8 pt-8">
+    <div class="mb-12">
+        <p id="tripSuperStatus" class="label-medium text-on-surface-variant mb-2">MISSIONE ATTIVA</p>
+        <h2 id="tripTitle" class="text-4xl md:text-5xl font-extrabold text-primary tracking-tighter mb-4">...</h2>
+        <div class="flex flex-wrap gap-4 text-on-surface-variant body-large">
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">calendar_today</span>
+                <span id="tripDates">...</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <span class="material-symbols-outlined text-primary">location_on</span>
+                <span id="tripDest">...</span>
+            </div>
+        </div>
+        <div id="tripNoteContainer" class="hidden mt-6 p-4 bg-surface-container-low rounded-xl border border-outline-variant/20 text-sm text-secondary italic">
+            <span class="font-bold text-primary not-italic block mb-1">Note:</span>
+            <span id="tripNoteText"></span>
+        </div>
+    </div>
+
+    <div class="flex flex-col gap-6 mb-16">
+        <div class="bg-primary text-white p-8 rounded-xl flex flex-col justify-between min-h-[160px] shadow-xl shadow-primary/10">
+            <p class="label-medium opacity-80">Totale Speso</p>
+            <div class="flex flex-col">
+                <div>
+                    <span class="text-xs font-medium align-top mr-1">euro</span>
+                    <span id="totaleSpeso" class="text-4xl font-bold tracking-tight">0,00</span>
+                </div>
+                <div class="w-full bg-white/20 h-1 mt-4 rounded-full overflow-hidden">
+                    <div class="bg-white h-full" style="width: 100%"></div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">directions_car</span>
+                </div>
+                <div>
+                    <p class="label-medium text-on-surface-variant text-[10px]">Trasporto</p>
+                    <p id="totTrasporto" class="font-bold text-on-surface">euro 0,00</p>
+                </div>
+            </div>
+            <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">restaurant</span>
+                </div>
+                <div>
+                    <p class="label-medium text-on-surface-variant text-[10px]">Vitto</p>
+                    <p id="totVitto" class="font-bold text-on-surface">euro 0,00</p>
+                </div>
+            </div>
+            <div class="bg-surface-container-low p-4 rounded-xl border border-outline-variant/15 flex items-center gap-4">
+                <div class="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">hotel</span>
+                </div>
+                <div>
+                    <p class="label-medium text-on-surface-variant text-[10px]">Alloggio</p>
+                    <p id="totAlloggio" class="font-bold text-on-surface">euro 0,00</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8">
+        <div>
+            <h3 class="headline-medium text-on-surface">Giustificativi Caricati</h3>
+            <p class="text-on-surface-variant mt-1">Elenco delle spese</p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+            <button onclick="scaricaExcel()" class="flex items-center justify-center gap-2 px-6 py-3 bg-emerald-700 text-white font-bold rounded-xl hover:bg-emerald-800 transition-all active:scale-95 shadow-lg shadow-emerald-700/20 cursor-pointer">
+                <span class="material-symbols-outlined">download</span>
+                <span class="hidden md:inline">Scarica</span> Excel
+            </button>
+            <button onclick="scaricaZipFoto()" id="zipBtn" class="flex items-center justify-center gap-2 px-6 py-3 bg-blue-700 text-white font-bold rounded-xl hover:bg-blue-800 transition-all active:scale-95 shadow-lg shadow-blue-700/20 cursor-pointer">
+                <span class="material-symbols-outlined">photo_library</span>
+                <span class="hidden md:inline">Scarica</span> ZIP Foto
+            </button>
+            <button id="addGiustificativoBtn" class="flex items-center justify-center gap-2 px-6 py-3 bg-primary text-white font-bold rounded-xl hover:opacity-90 transition-all active:scale-95 shadow-lg shadow-primary/20 cursor-pointer">
+                <span class="material-symbols-outlined">add</span>
+                <span class="hidden md:inline">Aggiungi</span> Giustificativo
+            </button>
+            <button id="concludiTrasfertaBtn" onclick="cambiaStatoTrasferta('Conclusa')" class="flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-primary font-bold rounded-xl hover:bg-surface-container-highest transition-all active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined">done_all</span>
+                <span class="hidden md:inline">Concludi</span>
+            </button>
+            <button id="riapriTrasfertaBtn" onclick="cambiaStatoTrasferta('In Corso')" class="hidden flex items-center justify-center gap-2 px-6 py-3 bg-surface-container-high text-primary font-bold rounded-xl hover:bg-surface-container-highest transition-all active:scale-95 cursor-pointer">
+                <span class="material-symbols-outlined">lock_open</span>
+                <span class="hidden md:inline">Riapri</span>
+            </button>
+            <button id="eliminaTrasfertaBtn" onclick="eliminaTrasferta()" class="flex items-center justify-center gap-2 px-4 py-3 bg-red-50 text-red-600 hover:bg-red-100 font-bold rounded-xl transition-all active:scale-95 cursor-pointer" title="Elimina questa trasferta">
+                <span class="material-symbols-outlined text-[20px]">delete</span>
+                <span>Elimina</span>
+            </button>
+        </div>
+    </div>
+
+    <div id="giustificativiList" class="space-y-4">
+        <!-- Generati dinamicamente via JS -->
+    </div>
+
+
+</main>
+
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-4 pt-2 bg-[#f8f9fa]/80 dark:bg-[#191c1d]/80 backdrop-blur-xl border-t border-black/5 dark:border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] z-50">
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="index.html">
+        <span class="material-symbols-outlined mb-1">home</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center bg-[#006684] text-white rounded-xl py-2 px-4 active:scale-90 transition-transform cursor-pointer" href="elenco_trasferte.html">
+        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">business_center</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Trasferte</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="settings.html">
+        <span class="material-symbols-outlined mb-1">settings</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Settings</span>
+    </a>
+</nav>
+
+<script src="app_common.js"></script>
+<script src="driveStorage.js"></script>
+<script src="photoViewer.js"></script>
+<script>
+    window.onload = async function() {
+        if(localStorage.getItem('userLoggedIn') !== 'true') {
+            window.location.href = 'login.html'; 
+            return;
+        }
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const trasfertaId = urlParams.get('id');
+
+        if (!trasfertaId) {
+            window.location.href = 'elenco_trasferte.html';
+            return;
+        }
+
+        const trasferte = await driveStorage.getTrasferte();
+        const trasferta = trasferte.find(t => t.id === trasfertaId);
+
+        if (!trasferta) {
+            alert('Trasferta non trovata.');
+            window.location.href = 'elenco_trasferte.html';
+            return;
+        }
+
+        document.getElementById('page-body').classList.remove('hidden');
+
+        document.getElementById('tripTitle').innerText = trasferta.nome;
+        document.getElementById('tripDates').innerText = `Creata il ${trasferta.data}`;
+        document.getElementById('tripDest').innerText = trasferta.destinazione;
+        document.getElementById('tripStatus').innerText = trasferta.status;
+        
+        if(trasferta.note && trasferta.note.trim() !== '') {
+            document.getElementById('tripNoteContainer').classList.remove('hidden');
+            document.getElementById('tripNoteText').innerText = trasferta.note;
+        }
+        
+        if (trasferta.status === 'Conclusa') {
+            document.getElementById('tripSuperStatus').innerText = 'MISSIONE CONCLUSA';
+            document.getElementById('tripStatus').className = "bg-gray-500 text-white px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase";
+            document.getElementById('addGiustificativoBtn').classList.add('hidden');
+            document.getElementById('concludiTrasfertaBtn').classList.add('hidden');
+            document.getElementById('riapriTrasfertaBtn').classList.remove('hidden');
+            document.getElementById('riapriTrasfertaBtn').classList.add('flex');
+        } else {
+            document.getElementById('tripSuperStatus').innerText = 'MISSIONE IN CORSO';
+            document.getElementById('tripStatus').className = "bg-primary/10 text-primary px-3 py-1 rounded-full text-xs font-bold tracking-wide uppercase";
+            document.getElementById('addGiustificativoBtn').classList.remove('hidden');
+            document.getElementById('concludiTrasfertaBtn').classList.remove('hidden');
+            document.getElementById('concludiTrasfertaBtn').classList.add('flex');
+            document.getElementById('riapriTrasfertaBtn').classList.add('hidden');
+            document.getElementById('riapriTrasfertaBtn').classList.remove('flex');
+        }
+
+        document.getElementById('addGiustificativoBtn').onclick = () => window.location.href = `scansiona_giustificativo.html?id=${trasfertaId}`;
+
+        // Usa l'unico parser condiviso (app_common.js), coerente con l'inserimento.
+        function parseAmount(val) { return window.importoNumero(val); }
+
+        const giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+        let totale = 0, totTrasporto = 0, totVitto = 0, totAlloggio = 0;
+        const listContainer = document.getElementById('giustificativiList');
+        listContainer.innerHTML = '';
+
+        if(giustificativi.length === 0) {
+            listContainer.innerHTML = '<p class="text-secondary py-4 text-center border-2 border-dashed border-outline-variant/30 rounded-xl">Nessun giustificativo caricato.</p>';
+        }
+
+        giustificativi.forEach(g => {
+            const imp = parseAmount(g.importo);
+            totale += imp;
+            if(g.categoria === 'Trasporto') totTrasporto += imp;
+            else if(g.categoria === 'Vitto') totVitto += imp;
+            else if(g.categoria === 'Alloggio') totAlloggio += imp;
+
+            const iconMap = { 'Vitto': 'restaurant', 'Alloggio': 'hotel', 'Trasporto': 'directions_car' };
+            const icon = iconMap[g.categoria] || 'receipt';
+
+            const card = document.createElement('div');
+            card.className = "group bg-surface-container-lowest hover:bg-white p-5 rounded-xl flex items-center justify-between transition-all duration-300 shadow-sm border border-outline-variant/10 cursor-pointer";
+            card.onclick = () => window.location.href = `scansiona_giustificativo.html?id=${trasfertaId}&edit=${g.id}`;
+
+            // Badge foto
+            const fotoBadge = (g.fotoDriveId || g.fotoUrl)
+                ? `<button onclick="event.stopPropagation(); mostraFoto('${g.fotoDriveId || ''}')"
+                      title="Vedi foto scontrino"
+                      class="flex items-center gap-1 px-2 py-1 bg-emerald-50 text-emerald-700 rounded-lg text-[10px] font-bold hover:bg-emerald-100 transition-colors mt-1 cursor-pointer">
+                      <span class="material-symbols-outlined text-[14px]">photo</span>Vedi foto
+                   </button>`
+                : '';
+
+            card.innerHTML = `
+                <div class="flex items-center gap-4">
+                    <div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-primary flex-shrink-0">
+                        <span class="material-symbols-outlined text-2xl">${icon}</span>
+                    </div>
+                    <div>
+                        <h4 class="title-medium text-on-surface">${esc(g.nome)}</h4>
+                        <div class="flex items-center gap-3 mt-0.5 flex-wrap">
+                            <span class="label-medium text-on-surface-variant">${esc(g.data)}</span>
+                            <span class="w-1 h-1 bg-outline-variant rounded-full"></span>
+                            <span class="label-medium text-on-surface-variant">${esc(g.categoria)}</span>
+                        </div>
+                        ${fotoBadge}
+                    </div>
+                </div>
+                <div class="flex items-center gap-4">
+                    <div class="text-right">
+                        <p class="title-medium text-on-surface">euro ${imp.toFixed(2).replace('.', ',')}</p>
+                    </div>
+                    <div class="flex flex-col gap-1 bg-surface-container-highest p-1.5 rounded-lg ${trasferta.status === 'Conclusa' ? 'hidden' : ''}">
+                        <button onclick="event.stopPropagation(); window.eliminaGiustificativo('${g.id}', '${trasfertaId}')" class="text-on-surface-variant hover:text-error transition-colors flex items-center justify-center cursor-pointer">
+                            <span class="material-symbols-outlined text-[18px]">delete</span>
+                        </button>
+                    </div>
+                </div>
+            `;
+            listContainer.appendChild(card);
+        });
+
+        document.getElementById('totaleSpeso').innerText = totale.toLocaleString('it-IT', { minimumFractionDigits: 2 });
+        document.getElementById('totTrasporto').innerText = `euro ${totTrasporto.toFixed(2).replace('.', ',')}`;
+        document.getElementById('totVitto').innerText = `euro ${totVitto.toFixed(2).replace('.', ',')}`;
+        document.getElementById('totAlloggio').innerText = `euro ${totAlloggio.toFixed(2).replace('.', ',')}`;
+    };
+
+    window.eliminaGiustificativo = async function(idGiustificativo, trasfertaId) {
+        if(!confirm("Sicuro di voler eliminare questa spesa?")) return;
+        let giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+        giustificativi = giustificativi.filter(g => g.id !== idGiustificativo);
+        await driveStorage.saveGiustificativi(trasfertaId, giustificativi);
+        window.location.reload(); 
+    };
+
+    window.cambiaStatoTrasferta = async function(nuovoStato) {
+        const msg = nuovoStato === 'Conclusa' 
+            ? "Vuoi davvero concludere la trasferta? Non potrai piu' aggiungere o modificare le spese finche' non la riaprirai."
+            : "Vuoi riaprire la trasferta? Potrai inserire di nuovo i giustificativi.";
+        if(!confirm(msg)) return;
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const trasfertaId = urlParams.get('id');
+        let trasferte = await driveStorage.getTrasferte();
+        const idx = trasferte.findIndex(t => t.id === trasfertaId);
+        if(idx !== -1) {
+            trasferte[idx].status = nuovoStato;
+            await driveStorage.saveTrasferte(trasferte);
+            window.location.reload();
+        }
+    };
+
+    window.eliminaTrasferta = async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const trasfertaId = urlParams.get('id');
+        let trasferte = await driveStorage.getTrasferte();
+        const trasferta = trasferte.find(t => t.id === trasfertaId);
+
+        if (!trasferta) { alert("Trasferta non trovata."); return; }
+
+        const giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+        let confermato = false;
+
+        if (giustificativi.length > 0) {
+            const count = giustificativi.length;
+            const parola = count === 1 ? '1 spesa/giustificativo' : `${count} spese/giustificativi`;
+            confermato = confirm(`ATTENZIONE:\n\nQuesta trasferta ("${trasferta.nome}") contiene attualmente ${parola}.\n\nSe procedi, la trasferta e TUTTE le spese collegate verranno eliminate in modo permanente.\n\nSei sicuro di voler eliminare tutto?`);
+        } else {
+            confermato = confirm(`Sei sicuro di voler eliminare la trasferta "${trasferta.nome}"?`);
+        }
+
+        if (!confermato) return;
+
+        await driveStorage.deleteGiustificativiTrasferta(trasfertaId);
+        trasferte = trasferte.filter(t => t.id !== trasfertaId);
+        await driveStorage.saveTrasferte(trasferte);
+
+        alert("Trasferta eliminata con successo.");
+        window.location.href = 'elenco_trasferte.html';
+    };
+
+    window.scaricaExcel = async function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        const trasfertaId = urlParams.get('id');
+        const userName = localStorage.getItem('userName') || localStorage.getItem('userEmail') || '';
+        
+        const trasferte = await driveStorage.getTrasferte();
+        const trasferta = trasferte.find(t => t.id === trasfertaId);
+        const giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+        const settings = await driveStorage.getSettings();
+
+        if (!trasferta) { alert('Trasferta non trovata.'); return; }
+
+        // Usa l'unico parser condiviso (app_common.js), coerente con l'inserimento.
+        function parseAmount(val) { return window.importoNumero(val); }
+
+        const headerRows = [
+            ['NOTA SPESE'],
+            ['Dipendente:', userName],
+            ['Azienda:', settings.companyName || ''],
+            ['P.IVA:', settings.companyVat || ''],
+            ['Trasferta:', trasferta.nome],
+            ['Destinazione:', trasferta.destinazione],
+            ['Data:', trasferta.data],
+            ['Note:', trasferta.note || ''],
+            [],
+            ['Data', 'Categoria', 'Descrizione', 'Importo (euro)', 'Link Foto']
+        ];
+
+        let totale = 0;
+        const speseRows = giustificativi.map(g => {
+            const imp = parseAmount(g.importo);
+            totale += imp;
+            return [g.data, g.categoria, g.nome, imp, g.fotoUrl || ''];
+        });
+
+        const allRows = [...headerRows, ...speseRows, [], ['', '', 'TOTALE', totale, '']];
+        const ws = XLSX.utils.aoa_to_sheet(allRows);
+        ws['!cols'] = [{wch: 14}, {wch: 14}, {wch: 35}, {wch: 16}, {wch: 50}];
+
+        const range = XLSX.utils.decode_range(ws['!ref']);
+        for (let R = range.s.r; R <= range.e.r; R++) {
+            const cell = ws[XLSX.utils.encode_cell({r: R, c: 3})];
+            if (cell && typeof cell.v === 'number') { cell.z = '#,##0.00 "euro"'; }
+        }
+
+        const wb = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(wb, ws, 'Nota Spese');
+        XLSX.writeFile(wb, `Nota_Spese_${trasferta.nome.replace(/\s+/g, '_')}.xlsx`);
+    };
+
+    // ── Scarica ZIP con tutte le foto della trasferta ──────────────────
+    window.scaricaZipFoto = async function() {
+        const urlParams  = new URLSearchParams(window.location.search);
+        const trasfertaId = urlParams.get('id');
+        const trasferte  = await driveStorage.getTrasferte();
+        const trasferta  = trasferte.find(t => t.id === trasfertaId);
+        const giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+        if (!trasferta) { alert('Trasferta non trovata.'); return; }
+
+        const conFoto = giustificativi.filter(g => g.fotoDriveId);
+        if (conFoto.length === 0) {
+            alert('Nessuna foto disponibile per questa trasferta.');
+            return;
+        }
+
+        const btn = document.getElementById('zipBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="animate-spin w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Preparazione...';
+
+        try {
+            const zip = new JSZip();
+            let i = 1;
+            for (const g of conFoto) {
+                const base64 = await driveStorage.getPhotoBase64(g.fotoDriveId);
+                if (base64) {
+                    const mime = (base64.match(/^data:([^;]+);/) || [])[1] || '';
+                    const ext  = window.estensioneDaMime(mime);
+                    const data = base64.split(',')[1];
+                    const nome = `${String(i).padStart(2,'0')}_${(g.nome || 'scontrino').replace(/[^a-z0-9]/gi,'_')}_${g.data || ''}.${ext}`;
+                    zip.file(nome, data, { base64: true });
+                    i++;
+                }
+            }
+            const blob = await zip.generateAsync({ type: 'blob' });
+            saveAs(blob, `Foto_${trasferta.nome.replace(/\s+/g,'_')}.zip`);
+        } catch (err) {
+            console.error('Errore ZIP:', err);
+            alert('Errore durante la creazione del file ZIP.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<span class="material-symbols-outlined">photo_library</span> <span class="hidden md:inline">Scarica</span> ZIP Foto';
+        }
+    };
+</script>
+</body>
+</html>
+

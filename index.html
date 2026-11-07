@@ -1,0 +1,235 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;800;900&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary": "#004d64",
+                    "primary-container": "#006684",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-container-high": "#e7e8e9",
+                    "surface-container-highest": "#e1e3e4",
+                    "background": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "outline": "#70787e",
+                    "secondary": "#555f69",
+                    "secondary-fixed-dim": "#bdc8d3",
+                },
+                "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+                }
+            }
+        }
+    };
+</script>
+<style>
+    body { font-family: 'Inter', sans-serif; min-height: max(884px, 100dvh); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+</head>
+<body class="bg-background text-on-surface font-body min-h-screen flex flex-col hidden" id="page-body">
+
+<header class="bg-[#f8f9fa] dark:bg-slate-950 flex justify-between items-center w-full px-6 py-4 backdrop-blur-md bg-opacity-80 sticky top-0 z-50">
+    <div class="flex items-center gap-3">
+        <div class="w-10 h-10 rounded-full bg-primary-container flex items-center justify-center text-white font-bold overflow-hidden">
+            <span class="material-symbols-outlined">person</span>
+        </div>
+        <h1 class="text-xl font-black text-[#004d64] dark:text-cyan-400 uppercase tracking-widest font-headline">Gestione Trasferte</h1>
+    </div>
+    <div class="flex items-center gap-4">
+        <!-- Bottone Logout Rosso -->
+        <button onclick="esci()" class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 hover:bg-red-200 transition-colors shadow-sm" title="Esci">
+            <span class="material-symbols-outlined text-[20px]">logout</span>
+        </button>
+    </div>
+</header>
+
+<main class="flex-grow container mx-auto px-6 py-8 max-w-lg pb-24">
+    <!-- Dashboard Hero Section -->
+    <div class="mb-12 text-center">
+        <p class="text-label text-secondary font-medium tracking-[0.05em] uppercase mb-2">Saldo Mensile</p>
+        <h2 id="saldoMensile" class="text-[3.5rem] font-black text-primary leading-tight tracking-tighter">euro 0,00</h2>
+        <div class="flex items-center justify-center gap-2 mt-2">
+            <span class="material-symbols-outlined text-primary text-sm" style='font-variation-settings: "FILL" 1;'>trending_up</span>
+            <p class="text-body text-secondary-fixed-dim text-sm">Spese del mese in corso</p>
+        </div>
+    </div>
+
+    <!-- Primary Action: Carica Giustificativo -->
+    <div class="flex flex-col items-center justify-center mb-14">
+        <div class="relative group">
+            <!-- Effetto alone soffuso -->
+            <div class="absolute -inset-3 rounded-full blur-xl opacity-60 group-hover:opacity-100 transition duration-500" style="background: radial-gradient(circle, rgba(0, 102, 132, 0.4) 0%, rgba(0, 77, 100, 0) 70%);"></div>
+            
+            <button onclick="window.location.href='scansiona_giustificativo.html'" 
+                    class="relative w-36 h-36 rounded-full text-white flex flex-col items-center justify-center gap-2 shadow-[0_16px_36px_rgba(0,77,100,0.32)] hover:shadow-[0_20px_48px_rgba(0,77,100,0.45)] hover:scale-105 active:scale-95 transition-all duration-300 cursor-pointer border-4 border-white/20 ring-4 ring-[#006684]/15"
+                    style="background: linear-gradient(135deg, #004d64 0%, #006684 100%);">
+                <!-- Macchina fotografica ultra-stilizzata (Minimalist Line-Art SVG) -->
+                <svg class="w-12 h-12 text-white group-hover:scale-110 transition-transform duration-300 drop-shadow-md" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M14.5 4h-5L7 7H4a2 2 0 0 0-2 2v9a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-3l-2.5-3z"/>
+                    <circle cx="12" cy="13" r="3.75"/>
+                    <circle cx="18" cy="9.5" r="0.75" fill="currentColor"/>
+                </svg>
+                <span class="text-[11px] font-bold tracking-wider uppercase text-center px-3 leading-tight drop-shadow">Carica Spesa</span>
+            </button>
+        </div>
+        <p class="mt-5 text-label text-secondary font-semibold text-xs tracking-wider uppercase">Scansiona scontrino o fattura</p>
+    </div>
+
+    <!-- Secondary Actions Grid -->
+    <div class="grid grid-cols-1 gap-4">
+        <button onclick="window.location.href='nuova_trasferta.html'" class="w-full h-20 flex items-center justify-between px-6 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group cursor-pointer">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">flight_takeoff</span>
+                </div>
+                <span class="text-primary font-bold text-lg">Crea Nuova Trasferta</span>
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </button>
+
+        <button onclick="window.location.href='elenco_trasferte.html'" class="w-full h-20 flex items-center justify-between px-6 bg-surface-container-low rounded-xl hover:bg-surface-container-high transition-colors group cursor-pointer">
+            <div class="flex items-center gap-4">
+                <div class="w-12 h-12 rounded-lg bg-surface-container-lowest flex items-center justify-center text-primary">
+                    <span class="material-symbols-outlined">list_alt</span>
+                </div>
+                <span class="text-primary font-bold text-lg">Elenco Trasferte</span>
+            </div>
+            <span class="material-symbols-outlined text-outline group-hover:translate-x-1 transition-transform">chevron_right</span>
+        </button>
+    </div>
+
+    <!-- Recent Activity Section -->
+    <div class="mt-16 mb-8">
+        <h3 class="text-label text-outline uppercase font-medium tracking-[0.05em] mb-6">Attività Recente</h3>
+        <div class="space-y-6" id="recentActivityContainer">
+            <!-- Dati dinamici via JS -->
+            <p class="text-sm text-secondary italic">Nessuna attività recente trovata.</p>
+        </div>
+    </div>
+</main>
+
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-4 pt-2 bg-[#f8f9fa]/80 dark:bg-[#191c1d]/80 backdrop-blur-xl border-t border-black/5 dark:border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] z-50">
+    <a class="flex flex-col items-center justify-center bg-[#006684] text-white rounded-xl py-2 px-4 active:scale-90 transition-transform hover:opacity-80 cursor-pointer" href="index.html">
+        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">home</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 active:scale-90 transition-transform hover:opacity-80 cursor-pointer" href="elenco_trasferte.html">
+        <span class="material-symbols-outlined mb-1">business_center</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Trasferte</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 active:scale-90 transition-transform hover:opacity-80 cursor-pointer" href="settings.html">
+        <span class="material-symbols-outlined mb-1">settings</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Settings</span>
+    </a>
+</nav>
+
+<script src="app_common.js"></script>
+<script src="driveStorage.js"></script>
+<script>
+    // Usa l'unico parser condiviso (app_common.js), coerente con l'inserimento.
+    function parseAmount(val) { return window.importoNumero(val); }
+
+    function parseItalianDate(dateStr) {
+        if (!dateStr) return new Date(0);
+        const parts = dateStr.split('/');
+        if (parts.length === 3) {
+            return new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        }
+        const iso = new Date(dateStr);
+        return isNaN(iso.getTime()) ? new Date(0) : iso;
+    }
+
+    // Controllo Accesso
+    window.onload = async function() {
+        if(localStorage.getItem('userLoggedIn') !== 'true') {
+            window.location.href = 'login.html'; 
+            return;
+        }
+        
+        document.getElementById('page-body').classList.remove('hidden');
+
+        // Carica dati da Drive
+        const trasferte = await driveStorage.getTrasferte();
+        
+        let allGiustificativi = [];
+        const currentDate = new Date();
+        const currentMonth = currentDate.getMonth();
+        const currentYear = currentDate.getFullYear();
+        let totalMonth = 0;
+
+        for (const t of trasferte) {
+            const gius = await driveStorage.getGiustificativi(t.id);
+            gius.forEach(g => {
+                g.trasfertaNome = t.nome;
+                g.parsedDate = parseItalianDate(g.data);
+                allGiustificativi.push(g);
+                if(g.parsedDate.getMonth() === currentMonth && g.parsedDate.getFullYear() === currentYear) {
+                    totalMonth += parseAmount(g.importo);
+                }
+            });
+        }
+
+        document.getElementById('saldoMensile').innerText = totalMonth.toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+
+        allGiustificativi.sort((a, b) => b.parsedDate - a.parsedDate);
+        const recent = allGiustificativi.slice(0, 3);
+        const container = document.getElementById('recentActivityContainer');
+        
+        if (recent.length > 0) {
+            container.innerHTML = '';
+            recent.forEach(g => {
+                const iconMap = { 'Vitto': 'restaurant', 'Alloggio': 'hotel', 'Trasporto': 'directions_car' };
+                const icon = iconMap[g.categoria] || 'receipt';
+                const imp = parseAmount(g.importo).toLocaleString('it-IT', { style: 'currency', currency: 'EUR' });
+                container.innerHTML += `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-4">
+                            <div class="w-14 h-14 rounded-xl bg-surface-container-highest flex items-center justify-center">
+                                <span class="material-symbols-outlined text-primary">${icon}</span>
+                            </div>
+                            <div>
+                                <p class="font-bold text-on-surface">${esc(g.nome)}</p>
+                                <p class="text-sm text-outline">${esc(g.data)} &middot; ${esc(g.trasfertaNome)}</p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <p class="font-bold text-lg text-primary">${imp}</p>
+                        </div>
+                    </div>
+                `;
+            });
+        }
+    };
+
+
+    window.esci = function() {
+        const token = localStorage.getItem('googleAccessToken');
+        function _pulisci() {
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('googleAccessToken');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            window.location.href = 'login.html';
+        }
+        if (token && window.google && window.google.accounts && window.google.accounts.oauth2) {
+            google.accounts.oauth2.revoke(token, () => { _pulisci(); });
+        } else { _pulisci(); }
+    };
+</script>
+</body>
+</html>
+
+

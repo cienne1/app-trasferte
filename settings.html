@@ -1,0 +1,164 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+
+<style>
+    body { min-height: max(884px, 100dvh); font-family: 'Inter', sans-serif; }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary": "#004d64",
+                    "primary-container": "#006684",
+                    "surface-container-highest": "#e1e3e4",
+                    "surface-container-high": "#e7e8e9",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-container-lowest": "#ffffff",
+                    "surface": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "on-surface-variant": "#3f484d",
+                    "outline-variant": "#bfc8cd",
+                    "secondary": "#555f69",
+                }
+            }
+        }
+    }
+</script>
+</head>
+<body class="bg-surface text-on-surface antialiased pb-32 hidden" id="page-body">
+
+<header class="w-full top-0 sticky bg-[#f8f9fa] dark:bg-[#191c1d] z-50">
+    <div class="flex items-center px-4 h-16 w-full max-w-7xl mx-auto">
+        <h1 class="text-xl font-bold tracking-tight text-[#004d64]">Impostazioni</h1>
+    </div>
+</header>
+
+<main class="max-w-xl mx-auto px-6 pt-6 space-y-10">
+
+    <!-- Sezione Dati Profilo e Azienda -->
+    <section>
+        <h2 class="text-sm font-bold text-secondary uppercase tracking-widest mb-4">Profilo e Azienda</h2>
+        <div class="bg-surface-container-lowest rounded-2xl shadow-sm border border-outline-variant/20 p-6 space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Email Account (Sola Lettura)</label>
+                <input id="emailDisplay" class="w-full h-12 px-4 bg-surface-container-low border-none rounded-lg text-secondary text-sm cursor-not-allowed" type="text" disabled/>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Nome Completo</label>
+                <input id="nomeCompleto" class="w-full h-12 px-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" placeholder="Es: Mario Rossi" type="text"/>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Nome Azienda</label>
+                <input id="nomeAzienda" class="w-full h-12 px-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" placeholder="Es: Azienda S.p.A." type="text"/>
+            </div>
+            <div>
+                <label class="block text-xs font-bold text-secondary uppercase tracking-wider mb-2">Partita IVA / Codice Fiscale Azienda</label>
+                <input id="partitaIva" class="w-full h-12 px-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary text-sm" placeholder="Es: IT01234567890" type="text"/>
+            </div>
+            <div class="pt-2">
+                <button onclick="salvaProfilo()" class="w-full h-12 bg-primary text-white font-bold rounded-lg hover:bg-primary-container active:scale-95 transition-all text-sm shadow-md">Salva Dati Profilo</button>
+                <p id="profileMsg" class="text-xs font-bold mt-2 text-green-600 hidden">Dati modificati con successo!</p>
+            </div>
+        </div>
+    </section>
+
+
+
+    <!-- Logout -->
+    <section class="pt-6 border-t border-outline-variant/20 text-center">
+        <button onclick="esci()" class="flex items-center justify-center gap-2 w-full h-14 bg-red-50 text-red-600 font-bold rounded-xl active:scale-95 transition-transform cursor-pointer">
+            <span class="material-symbols-outlined">logout</span>
+            Esci dall'Account
+        </button>
+    </section>
+
+</main>
+
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-4 pt-2 bg-[#f8f9fa]/80 dark:bg-[#191c1d]/80 backdrop-blur-xl border-t border-black/5 dark:border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] z-50">
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="index.html">
+        <span class="material-symbols-outlined mb-1">home</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="elenco_trasferte.html">
+        <span class="material-symbols-outlined mb-1">business_center</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Trasferte</span>
+    </a>
+    <a class="flex flex-col items-center justify-center bg-[#006684] text-white rounded-xl py-2 px-4 active:scale-90 transition-transform cursor-pointer" href="settings.html">
+        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">settings</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Settings</span>
+    </a>
+</nav>
+
+<script src="app_common.js"></script>
+<script src="driveStorage.js"></script>
+<script>
+    window.onload = async function() {
+        if(localStorage.getItem('userLoggedIn') !== 'true') {
+            window.location.href = 'login.html'; 
+            return;
+        }
+        document.getElementById('page-body').classList.remove('hidden');
+        
+        const userEmail = localStorage.getItem('userEmail') || '';
+        const userName = localStorage.getItem('userName') || '';
+        document.getElementById('emailDisplay').value = userEmail;
+        document.getElementById('nomeCompleto').value = userName;
+        
+        // Carica impostazioni azienda da Drive
+        const settings = await driveStorage.getSettings();
+        document.getElementById('nomeAzienda').value = settings.companyName || '';
+        document.getElementById('partitaIva').value = settings.companyVat || '';
+    };
+
+    window.salvaProfilo = async function() {
+        const newName = document.getElementById('nomeCompleto').value.trim();
+        const newCompanyName = document.getElementById('nomeAzienda').value.trim();
+        const newCompanyVat = document.getElementById('partitaIva').value.trim();
+        const msg = document.getElementById('profileMsg');
+
+        if (!newName) {
+            alert("Il nome completo non puo' essere vuoto.");
+            return;
+        }
+
+        // Aggiorna sessione locale
+        localStorage.setItem('userName', newName);
+
+        // Salva su Drive
+        const settings = await driveStorage.getSettings();
+        settings.companyName = newCompanyName;
+        settings.companyVat = newCompanyVat;
+        settings.userName = newName;
+        await driveStorage.saveSettings(settings);
+
+        msg.classList.remove('hidden');
+        setTimeout(() => { msg.classList.add('hidden'); }, 3000);
+    };
+
+    window.esci = function() {
+        const token = localStorage.getItem('googleAccessToken');
+        function _pulisci() {
+            localStorage.removeItem('userLoggedIn');
+            localStorage.removeItem('googleAccessToken');
+            localStorage.removeItem('userEmail');
+            localStorage.removeItem('userName');
+            window.location.href = 'login.html';
+        }
+        if (token && window.google && window.google.accounts && window.google.accounts.oauth2) {
+            google.accounts.oauth2.revoke(token, () => { _pulisci(); });
+        } else { _pulisci(); }
+    };
+</script>
+</body>
+</html>
+

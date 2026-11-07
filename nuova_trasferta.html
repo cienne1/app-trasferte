@@ -1,0 +1,279 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<style>
+    body { font-family: 'Inter', sans-serif; min-height: max(884px, 100dvh); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+</style>
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary": "#004d64",
+                    "primary-container": "#006684",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-high": "#e7e8e9",
+                    "surface": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "outline": "#70787e",
+                }
+            }
+        }
+    }
+</script>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32 hidden" id="page-body">
+
+<header class="fixed top-0 w-full z-50 bg-slate-50/80 dark:bg-slate-900/80 backdrop-blur-xl">
+    <div class="flex justify-between items-center h-16 px-6 w-full max-w-7xl mx-auto">
+        <div class="flex items-center gap-4">
+            <a href="index.html" class="material-symbols-outlined text-[#004d64] dark:text-[#006684] hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full active:scale-95 duration-200 transition-all">arrow_back</a>
+            <h1 class="text-lg font-bold tracking-tighter text-[#004d64] dark:text-sky-100 font-inter antialiased tracking-tight">Nuova Trasferta</h1>
+        </div>
+        <button class="material-symbols-outlined text-[#004d64] dark:text-[#006684] hover:bg-slate-200/50 dark:hover:bg-slate-800/50 transition-colors p-2 rounded-full active:scale-95 duration-200 transition-all">check</button>
+    </div>
+</header>
+
+<main class="pt-24 px-6 max-w-3xl mx-auto">
+    <div class="mb-10 text-left">
+        <p class="text-[0.75rem] uppercase tracking-widest font-semibold text-primary mb-2">Pianificazione</p>
+        <h2 class="text-[1.75rem] font-bold leading-tight text-on-surface mb-4">Crea una nuova trasferta</h2>
+        <div class="h-1 w-12 bg-primary rounded-full"></div>
+    </div>
+
+    <div class="space-y-8">
+        <!-- Nome Trasferta -->
+        <div class="relative group">
+            <label class="block text-[0.75rem] uppercase tracking-widest font-semibold text-outline mb-2 ml-1">Nome Trasferta</label>
+            <input id="nomeTrasferta" class="w-full h-14 px-5 bg-surface-container-high border-none rounded-xl text-on-surface placeholder:text-outline/50 focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none" placeholder="es. Meeting Cliente" type="text"/>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div class="relative group">
+                <label class="block text-[0.75rem] uppercase tracking-widest font-semibold text-outline mb-2 ml-1">Destinazione</label>
+                <div class="relative">
+                    <input id="destinazione" class="w-full h-14 pl-12 pr-5 bg-surface-container-high border-none rounded-xl text-on-surface focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none" placeholder="Città, Paese" type="text"/>
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">location_on</span>
+                </div>
+            </div>
+            
+            <div class="relative group">
+                <div class="flex justify-between items-center mb-2 ml-1 pr-1">
+                    <label class="block text-[0.75rem] uppercase tracking-widest font-semibold text-outline">Tipo di Trasferta</label>
+                    <button type="button" onclick="openManageCategories()" class="text-primary hover:text-primary-container transition-colors p-1 rounded-full active:scale-95 flex items-center justify-center" title="Gestisci Categorie">
+                        <span class="material-symbols-outlined text-[16px]">settings</span>
+                    </button>
+                </div>
+                <div class="relative">
+                    <select id="tipoTrasfertaSelect" onchange="handleCategorySelect(this)" class="w-full h-14 pl-12 pr-5 bg-surface-container-high border-none rounded-xl text-on-surface appearance-none focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none">
+                        <!-- Options populated by JS -->
+                    </select>
+                    <span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">category</span>
+                    <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="relative group">
+            <label class="block text-[0.75rem] uppercase tracking-widest font-semibold text-outline mb-2 ml-1">Note (Opzionale)</label>
+            <textarea id="noteTrasferta" class="w-full p-5 bg-surface-container-high border-none rounded-xl text-on-surface placeholder:text-outline/50 focus:bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 transition-all duration-300 outline-none resize-none" placeholder="Aggiungi dettagli aggiuntivi..." rows="4"></textarea>
+        </div>
+
+        <div class="pt-6 flex justify-center">
+            <button onclick="salvaTrasferta()" class="w-full md:w-auto md:min-w-[320px] h-14 bg-primary text-white font-bold rounded-lg px-12 shadow-lg shadow-primary/20 hover:bg-primary-container transition-all active:scale-95 flex items-center justify-center gap-3 cursor-pointer">
+                <span class="material-symbols-outlined">save</span>
+                Salva Trasferta
+            </button>
+        </div>
+    </div>
+</main>
+
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-4 pt-2 bg-[#f8f9fa]/80 dark:bg-[#191c1d]/80 backdrop-blur-xl z-50 border-t border-black/5 dark:border-white/5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)]">
+    <a href="index.html" class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer">
+        <span class="material-symbols-outlined">home</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-semibold mt-1">Home</span>
+    </a>
+    <a href="elenco_trasferte.html" class="flex flex-col items-center justify-center bg-[#006684] text-white rounded-xl py-2 px-4 active:scale-90 transition-transform cursor-pointer">
+        <span class="material-symbols-outlined">business_center</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-semibold mt-1">Trasferte</span>
+    </a>
+    <div class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer">
+        <span class="material-symbols-outlined">settings</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-semibold mt-1">Settings</span>
+    </div>
+</nav>
+
+<!-- Modale Aggiungi Categoria -->
+<div id="addCategoryModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center backdrop-blur-sm px-4">
+    <div class="bg-surface-container-lowest w-full max-w-sm rounded-2xl p-6 shadow-2xl">
+        <h3 class="text-lg font-bold text-on-surface mb-4">Aggiungi nuova categoria</h3>
+        <input type="text" id="newCategoryInput" class="w-full h-12 px-4 bg-surface-container-high border-none rounded-xl text-on-surface mb-6 focus:ring-2 focus:ring-primary/20 outline-none" placeholder="Es. Visita Cantiere">
+        <div class="flex gap-3 justify-end">
+            <button onclick="closeAddCategoryModal()" class="px-5 py-2.5 rounded-lg text-secondary font-bold hover:bg-surface-container-low transition-colors">Annulla</button>
+            <button onclick="saveNewCategory()" class="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-container transition-colors">Salva</button>
+        </div>
+    </div>
+</div>
+
+<!-- Modale Gestione Categorie -->
+<div id="manageCategoryModal" class="fixed inset-0 bg-black/50 z-[60] hidden flex items-center justify-center backdrop-blur-sm px-4">
+    <div class="bg-surface-container-lowest w-full max-w-sm rounded-2xl p-6 shadow-2xl max-h-[80vh] flex flex-col">
+        <h3 class="text-lg font-bold text-on-surface mb-4">Gestisci Categorie</h3>
+        <div id="manageCategoryList" class="overflow-y-auto space-y-2 mb-6 flex-1">
+            <!-- Lista popolata via JS -->
+        </div>
+        <div class="flex justify-end pt-2 border-t border-surface-container-high">
+            <button onclick="closeManageCategories()" class="px-5 py-2.5 bg-primary text-white rounded-lg font-bold hover:bg-primary-container transition-colors">Chiudi</button>
+        </div>
+    </div>
+</div>
+<script src="app_common.js"></script>
+<script src="driveStorage.js"></script>
+<script>
+    const standardCategories = [
+        "Business",
+        "Formazione",
+        "Altro"
+    ];
+
+    async function getCustomCategories() {
+        return await driveStorage.getCustomCategories();
+    }
+
+    async function renderSelect() {
+        const select = document.getElementById('tipoTrasfertaSelect');
+        const customCategories = await getCustomCategories();
+        const currentVal = select.value;
+        select.innerHTML = '';
+        standardCategories.forEach(cat => { select.add(new Option(cat, cat)); });
+        if (customCategories.length > 0) {
+            const group = document.createElement('optgroup');
+            group.label = "Personalizzate";
+            customCategories.forEach(cat => { group.appendChild(new Option(cat, cat)); });
+            select.appendChild(group);
+        }
+        select.add(new Option("+ Aggiungi nuovo tipo...", "add_new"));
+        if(currentVal && currentVal !== "add_new") {
+            select.value = currentVal;
+        } else {
+            select.value = standardCategories[0];
+        }
+    }
+
+    function handleCategorySelect(select) {
+        if (select.value === 'add_new') {
+            document.getElementById('addCategoryModal').classList.remove('hidden');
+        }
+    }
+
+    function closeAddCategoryModal() {
+        document.getElementById('addCategoryModal').classList.add('hidden');
+        document.getElementById('newCategoryInput').value = '';
+        renderSelect();
+    }
+
+    async function saveNewCategory() {
+        const input = document.getElementById('newCategoryInput');
+        const newCat = input.value.trim();
+        if (newCat) {
+            const customCats = await getCustomCategories();
+            if (!customCats.includes(newCat) && !standardCategories.includes(newCat)) {
+                customCats.push(newCat);
+                await driveStorage.saveCustomCategories(customCats);
+            }
+            closeAddCategoryModal();
+            document.getElementById('tipoTrasfertaSelect').value = newCat;
+        }
+    }
+
+    async function openManageCategories() {
+        const listDiv = document.getElementById('manageCategoryList');
+        const customCats = await getCustomCategories();
+        listDiv.innerHTML = '';
+        if (customCats.length === 0) {
+            listDiv.innerHTML = '<p class="text-sm text-secondary text-center py-4">Nessuna categoria personalizzata.</p>';
+        } else {
+            customCats.forEach(cat => {
+                const row = document.createElement('div');
+                row.className = "flex justify-between items-center p-3 bg-surface-container-high rounded-lg";
+                row.innerHTML = `<span class="font-medium text-sm text-on-surface">${esc(cat)}</span>
+                    <button onclick="deleteCategory('${cat.replace(/'/g, "\\'")}')" class="text-error hover:bg-error/10 p-1.5 rounded-md transition-colors" title="Elimina">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                    </button>`;
+                listDiv.appendChild(row);
+            });
+        }
+        document.getElementById('manageCategoryModal').classList.remove('hidden');
+    }
+
+    function closeManageCategories() {
+        document.getElementById('manageCategoryModal').classList.add('hidden');
+    }
+
+    async function deleteCategory(cat) {
+        const trasferte = await driveStorage.getTrasferte();
+        if (trasferte.some(t => t.tipo === cat)) {
+            alert(`Impossibile eliminare "${esc(cat)}".\nQuesta categoria e' usata da alcune trasferte. Modificale prima.`);
+            return;
+        }
+        if (confirm(`Sei sicuro di voler eliminare la categoria "${esc(cat)}"?`)) {
+            let customCats = await getCustomCategories();
+            customCats = customCats.filter(c => c !== cat);
+            await driveStorage.saveCustomCategories(customCats);
+            openManageCategories();
+            renderSelect();
+        }
+    }
+
+    async function salvaTrasferta() {
+        const nome = document.getElementById('nomeTrasferta').value.trim();
+        const destinazione = document.getElementById('destinazione').value.trim();
+        const tipo = document.getElementById('tipoTrasfertaSelect').value;
+        const note = document.getElementById('noteTrasferta').value.trim();
+
+        if(!nome || !destinazione) {
+            alert('Per favore, compila il Nome e la Destinazione della trasferta.');
+            return;
+        }
+
+        let trasferte = await driveStorage.getTrasferte();
+        const nuovaTrasferta = {
+            id: Date.now().toString(),
+            nome: nome,
+            destinazione: destinazione,
+            tipo: tipo,
+            note: note,
+            data: new Date().toLocaleDateString('it-IT', { day: '2-digit', month: 'short', year: 'numeric' }),
+            status: 'In Corso'
+        };
+
+        trasferte.unshift(nuovaTrasferta);
+        await driveStorage.saveTrasferte(trasferte);
+
+        document.getElementById('nomeTrasferta').value = '';
+        document.getElementById('destinazione').value = '';
+        document.getElementById('noteTrasferta').value = '';
+        document.getElementById('tipoTrasfertaSelect').value = standardCategories[0];
+
+        alert('Trasferta salvata con successo!');
+    }
+
+    window.onload = function() {
+        if(localStorage.getItem('userLoggedIn') !== 'true') {
+            window.location.href = 'login.html';
+        } else {
+            document.getElementById('page-body').classList.remove('hidden');
+            renderSelect();
+        }
+    };
+</script>
+</body>
+</html>
+

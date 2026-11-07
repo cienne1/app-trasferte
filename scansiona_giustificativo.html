@@ -1,0 +1,474 @@
+﻿<!DOCTYPE html>
+<html class="light" lang="it">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Scansiona Giustificativo</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+
+<script id="tailwind-config">
+    tailwind.config = {
+        darkMode: "class",
+        theme: {
+            extend: {
+                "colors": {
+                    "primary": "#004d64",
+                    "primary-container": "#006684",
+                    "surface-container-lowest": "#ffffff",
+                    "surface-container-low": "#f3f4f5",
+                    "surface-container-high": "#e7e8e9",
+                    "surface-container-highest": "#e1e3e4",
+                    "surface": "#f8f9fa",
+                    "on-surface": "#191c1d",
+                    "outline": "#70787e",
+                    "secondary": "#555f69",
+                }
+            }
+        }
+    }
+</script>
+<style>
+    body { font-family: 'Inter', sans-serif; min-height: max(884px, 100dvh); }
+    .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+    @keyframes scanMove {
+        0%   { top: 10%; opacity: 1; }
+        100% { top: 90%; opacity: 0.3; }
+    }
+    .scan-line-anim { animation: scanMove 1.8s ease-in-out infinite alternate; height: 2px; background: linear-gradient(90deg, transparent, #a2e1ff, transparent); box-shadow: 0 0 12px #a2e1ff; position: absolute; width: 100%; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+    .category-btn.active { background-color: #004d64 !important; color: white !important; }
+    .photo-thumb { width: 100%; max-height: 220px; object-fit: cover; border-radius: 1rem; }
+</style>
+</head>
+<body class="bg-surface text-on-surface min-h-screen pb-32 hidden" id="page-body">
+
+<header class="w-full top-0 sticky bg-[#f8f9fa] z-50 border-b border-black/5">
+    <div class="flex items-center justify-between px-6 py-4 w-full">
+        <div class="flex items-center gap-4">
+            <button onclick="history.back()" class="active:scale-95 duration-200 text-[#004d64] cursor-pointer">
+                <span class="material-symbols-outlined">arrow_back</span>
+            </button>
+            <h1 class="font-inter text-lg font-bold tracking-tight text-[#004d64]">Aggiungi Spesa</h1>
+        </div>
+    </div>
+</header>
+
+<main class="max-w-xl mx-auto px-6 pt-6 space-y-6 pb-40">
+
+    <!-- SEZIONE FOTO -->
+    <section>
+        <p class="text-[0.7rem] uppercase font-bold tracking-widest text-secondary mb-3">Foto Scontrino / Ricevuta</p>
+
+        <!-- Area foto / tap per scattare -->
+        <div id="photoArea" class="relative w-full rounded-2xl overflow-hidden bg-surface-container-high shadow-inner cursor-pointer border-2 border-dashed border-outline/30 transition-all hover:border-primary/40"
+             style="min-height:180px;" onclick="document.getElementById('fileInput').click()">
+
+            <!-- Placeholder se nessuna foto -->
+            <div id="photoPlaceholder" class="flex flex-col items-center justify-center gap-3 py-10">
+                <div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                    <span class="material-symbols-outlined text-primary text-4xl">photo_camera</span>
+                </div>
+                <p class="text-sm font-bold text-secondary">Tocca per scattare o caricare</p>
+                <p class="text-xs text-outline">Fotocamera &middot; Galleria &middot; PDF</p>
+            </div>
+
+            <!-- Preview foto caricata -->
+            <img id="photoPreview" class="photo-thumb hidden" alt="Foto scontrino"/>
+
+            <!-- Angolini scanner -->
+            <div class="absolute top-3 left-3 w-8 h-8 border-t-4 border-l-4 border-primary/60 rounded-tl-lg pointer-events-none"></div>
+            <div class="absolute top-3 right-3 w-8 h-8 border-t-4 border-r-4 border-primary/60 rounded-tr-lg pointer-events-none"></div>
+            <div class="absolute bottom-3 left-3 w-8 h-8 border-b-4 border-l-4 border-primary/60 rounded-bl-lg pointer-events-none"></div>
+            <div class="absolute bottom-3 right-3 w-8 h-8 border-b-4 border-r-4 border-primary/60 rounded-br-lg pointer-events-none"></div>
+
+            <!-- Linea scan animata (visibile durante OCR) -->
+            <div id="scanLineAnim" class="scan-line-anim hidden"></div>
+        </div>
+
+        <input type="file" id="fileInput" accept="image/*" capture="environment" class="hidden" onchange="handleFotoUpload(event)"/>
+
+        <!-- Pulsanti azione foto -->
+        <div class="flex gap-3 mt-3">
+            <button onclick="document.getElementById('fileInput').click()" class="flex-1 flex items-center justify-center gap-2 py-3 bg-primary text-white rounded-xl font-bold text-sm active:scale-95 transition-all cursor-pointer">
+                <span class="material-symbols-outlined text-[18px]">photo_camera</span>
+                Scatta / Carica
+            </button>
+            <button id="ocrBtn" onclick="avviaOCR()" class="flex-1 flex items-center justify-center gap-2 py-3 bg-surface-container-high text-primary rounded-xl font-bold text-sm active:scale-95 transition-all cursor-pointer hidden">
+                <span class="material-symbols-outlined text-[18px]">document_scanner</span>
+                Leggi OCR
+            </button>
+        </div>
+
+        <!-- Status OCR -->
+        <div id="ocrStatus" class="hidden mt-3 p-3 bg-primary/5 border border-primary/20 rounded-xl flex items-center gap-3">
+            <svg class="spinner w-5 h-5 text-primary flex-shrink-0" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+            </svg>
+            <span id="ocrStatusText" class="text-sm font-medium text-primary">Analisi in corso...</span>
+        </div>
+    </section>
+
+    <!-- FORM DATI -->
+    <section class="space-y-5">
+        <p class="text-[0.7rem] uppercase font-bold tracking-widest text-secondary">Dati Spesa</p>
+
+        <div>
+            <label class="block text-[0.75rem] uppercase font-bold tracking-widest text-secondary mb-2">TRASFERTA</label>
+            <div class="relative">
+                <select id="trasfertaSelect" class="w-full bg-surface-container-high border-none rounded-xl px-4 py-4 text-on-surface font-bold focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all appearance-none cursor-pointer">
+                    <option value="">Nessuna trasferta salvata...</option>
+                </select>
+                <span class="material-symbols-outlined absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-secondary">expand_more</span>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-[0.75rem] uppercase font-bold tracking-widest text-secondary mb-2">NOME / DESCRIZIONE</label>
+            <input id="nomeInput" class="w-full bg-surface-container-high border-none rounded-xl px-4 py-4 text-on-surface font-medium focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" placeholder="Es: Cena aziendale" type="text"/>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="block text-[0.75rem] uppercase font-bold tracking-widest text-secondary mb-2">IMPORTO</label>
+                <div class="relative">
+                    <input id="importoInput" class="w-full bg-surface-container-high border-none rounded-xl px-4 py-4 pr-14 text-primary font-bold text-lg focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" placeholder="0,00" type="text"/>
+                    <span class="absolute right-4 top-1/2 -translate-y-1/2 font-bold text-primary text-sm">euro</span>
+                </div>
+            </div>
+            <div>
+                <label class="block text-[0.75rem] uppercase font-bold tracking-widest text-secondary mb-2">DATA</label>
+                <input id="dataInput" class="w-full bg-surface-container-high border-none rounded-xl px-4 py-4 text-on-surface font-medium focus:ring-2 focus:ring-primary focus:bg-surface-container-lowest transition-all" type="date"/>
+            </div>
+        </div>
+
+        <div>
+            <label class="block text-[0.75rem] uppercase font-bold tracking-widest text-secondary mb-3">CATEGORIA</label>
+            <div class="grid grid-cols-3 gap-3">
+                <button type="button" onclick="selectCategory('Vitto', this)" id="catVitto" class="category-btn active flex flex-col items-center justify-center p-4 rounded-xl bg-primary text-white transition-all active:scale-95">
+                    <span class="material-symbols-outlined mb-1">restaurant</span>
+                    <span class="text-[10px] font-bold">Vitto</span>
+                </button>
+                <button type="button" onclick="selectCategory('Alloggio', this)" id="catAlloggio" class="category-btn flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all active:scale-95">
+                    <span class="material-symbols-outlined mb-1">hotel</span>
+                    <span class="text-[10px] font-bold">Alloggio</span>
+                </button>
+                <button type="button" onclick="selectCategory('Trasporto', this)" id="catTrasporto" class="category-btn flex flex-col items-center justify-center p-4 rounded-xl bg-surface-container-low text-on-surface hover:bg-surface-container-high transition-all active:scale-95">
+                    <span class="material-symbols-outlined mb-1">directions_car</span>
+                    <span class="text-[10px] font-bold">Trasporto</span>
+                </button>
+            </div>
+            <input type="hidden" id="categoriaInput" value="Vitto"/>
+        </div>
+
+        <!-- Info salvataggio foto -->
+        <div id="fotoSalvataInfo" class="hidden p-3 bg-emerald-50 border border-emerald-200 rounded-xl flex items-center gap-3">
+            <span class="material-symbols-outlined text-emerald-600">check_circle</span>
+            <div>
+                <p class="text-sm font-bold text-emerald-800">Foto pronta al salvataggio</p>
+                <p class="text-xs text-emerald-600">Verra' salvata in <strong>Drive > Stitch Trasferte</strong></p>
+            </div>
+        </div>
+
+        <button id="salvaBtn" onclick="salvaGiustificativo()" class="w-full h-14 bg-primary text-white rounded-xl font-bold text-lg shadow-xl hover:shadow-primary/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer">
+            <span class="material-symbols-outlined">save</span>
+            Salva Giustificativo
+        </button>
+    </section>
+</main>
+
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-4 pt-2 bg-[#f8f9fa]/80 backdrop-blur-xl border-t border-black/5 shadow-[0_-4px_24px_rgba(0,0,0,0.04)] z-50">
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="index.html">
+        <span class="material-symbols-outlined mb-1">home</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Home</span>
+    </a>
+    <a class="flex flex-col items-center justify-center bg-[#006684] text-white rounded-xl py-2 px-4 active:scale-90 transition-transform cursor-pointer" href="elenco_trasferte.html">
+        <span class="material-symbols-outlined mb-1" style="font-variation-settings: 'FILL' 1;">business_center</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Trasferte</span>
+    </a>
+    <a class="flex flex-col items-center justify-center text-[#444748] py-2 px-4 hover:opacity-80 active:scale-90 transition-transform cursor-pointer" href="settings.html">
+        <span class="material-symbols-outlined mb-1">settings</span>
+        <span class="font-inter text-[10px] uppercase tracking-widest font-medium">Settings</span>
+    </a>
+</nav>
+
+<script src="app_common.js"></script>
+<script src="driveStorage.js"></script>
+<script>
+    let fotoDataUrl = null;   // foto caricata dall'utente (base64)
+    let fotoFilename = null;  // nome file della foto
+
+    // ─── INIT ───────────────────────────────────────
+    window.onload = async function() {
+        if(localStorage.getItem('userLoggedIn') !== 'true') {
+            window.location.href = 'login.html'; return;
+        }
+        document.getElementById('page-body').classList.remove('hidden');
+
+        // Imposta data di oggi come default
+        document.getElementById('dataInput').valueAsDate = new Date();
+
+        const urlParams = new URLSearchParams(window.location.search);
+        const preselectedId = urlParams.get('id');
+        const editId = urlParams.get('edit');
+
+        // Popola select trasferte
+        const trasferte = await driveStorage.getTrasferte();
+        const select = document.getElementById('trasfertaSelect');
+        select.innerHTML = '<option value="">-- Seleziona trasferta --</option>';
+        trasferte.filter(t => t.status !== 'Conclusa').forEach(t => {
+            const opt = new Option(t.nome, t.id);
+            if (t.id === preselectedId) opt.selected = true;
+            select.appendChild(opt);
+        });
+
+        // Modalita' modifica
+        if (editId && preselectedId) {
+            const giustificativi = await driveStorage.getGiustificativi(preselectedId);
+            const g = giustificativi.find(x => x.id === editId);
+            if (g) {
+                document.getElementById('nomeInput').value = g.nome || '';
+                document.getElementById('importoInput').value = g.importo || '';
+                document.getElementById('dataInput').value = g.data || '';
+                selectCategory(g.categoria || 'Vitto');
+
+                // Se c'e' una foto salvata, mostrala (recupero autenticato da Drive)
+                if (g.fotoDriveId) {
+                    showFotoPreviewFromDrive(g.fotoDriveId);
+                }
+            }
+        }
+    };
+
+    // ─── GESTIONE FOTO ──────────────────────────────
+    function handleFotoUpload(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            fotoDataUrl = e.target.result;
+            const ext = file.name.split('.').pop() || 'jpg';
+            fotoFilename = `scontrino_${Date.now()}.${ext}`;
+
+            // Mostra anteprima
+            const preview = document.getElementById('photoPreview');
+            preview.src = fotoDataUrl;
+            preview.classList.remove('hidden');
+            document.getElementById('photoPlaceholder').classList.add('hidden');
+            document.getElementById('ocrBtn').classList.remove('hidden');
+            document.getElementById('fotoSalvataInfo').classList.remove('hidden');
+        };
+        reader.readAsDataURL(file);
+        event.target.value = '';
+    }
+
+    // Mostra l'anteprima della foto gia' salvata, scaricandola da Drive col token
+    // (non si puo' usare il link alla pagina di Drive come sorgente di un'immagine).
+    async function showFotoPreviewFromDrive(fileId) {
+        try {
+            const blob = await driveStorage.getPhotoBlob(fileId);
+            const preview = document.getElementById('photoPreview');
+            preview.src = URL.createObjectURL(blob);
+            preview.classList.remove('hidden');
+            document.getElementById('photoPlaceholder').classList.add('hidden');
+        } catch (e) {
+            // Se l'anteprima non si carica, non blocchiamo la modifica della spesa.
+            console.warn('Anteprima foto non disponibile:', e && e.message);
+        }
+    }
+
+    // ─── OCR ────────────────────────────────────────
+    async function avviaOCR() {
+        if (!fotoDataUrl) { alert('Carica prima una foto!'); return; }
+
+        // Mostra spinner e linea animata
+        document.getElementById('ocrStatus').classList.remove('hidden');
+        document.getElementById('ocrStatusText').innerText = 'Caricamento motore OCR...';
+        document.getElementById('scanLineAnim').classList.remove('hidden');
+        document.getElementById('ocrBtn').disabled = true;
+
+        try {
+            document.getElementById('ocrStatusText').innerText = 'Analisi testo...';
+            const { data: { text } } = await Tesseract.recognize(fotoDataUrl, 'ita+eng', {
+                logger: m => {
+                    if (m.status === 'recognizing text') {
+                        document.getElementById('ocrStatusText').innerText =
+                            `Analisi: ${Math.round((m.progress || 0) * 100)}%`;
+                    }
+                }
+            });
+
+            document.getElementById('ocrStatusText').innerText = 'Estrazione dati...';
+            estraiDatiDaTesto(text);
+
+        } catch (err) {
+            console.error('OCR error:', err);
+            alert('Errore OCR. Compila i campi manualmente.');
+        } finally {
+            document.getElementById('ocrStatus').classList.add('hidden');
+            document.getElementById('scanLineAnim').classList.add('hidden');
+            document.getElementById('ocrBtn').disabled = false;
+        }
+    }
+
+    function estraiDatiDaTesto(text) {
+        const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
+        console.log('[OCR] Testo riconosciuto:', text);
+
+        // ─ Cerca importo (es: "12,50" "€ 8.90" "TOTALE 45,00")
+        const importoPatterns = [
+            /(?:totale|total|importo|tot\.?)\s*[:\.]?\s*(?:eur?o?|€)?\s*(\d+[.,]\d{2})/i,
+            /(?:eur?o?|€)\s*(\d+[.,]\d{2})/i,
+            /(\d+[.,]\d{2})\s*(?:eur?o?|€)/i,
+            /(\d+[.,]\d{2})/
+        ];
+        for (const pattern of importoPatterns) {
+            const m = text.match(pattern);
+            if (m) {
+                const val = m[1].replace(',', '.');
+                if (parseFloat(val) > 0 && parseFloat(val) < 10000) {
+                    document.getElementById('importoInput').value = val.replace('.', ',');
+                    break;
+                }
+            }
+        }
+
+        // ─ Cerca data (formati: 28/09/2026 o 2026-09-28 o 28-09-26)
+        const datePatterns = [
+            /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{4})/,
+            /(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2})$/m
+        ];
+        for (const pattern of datePatterns) {
+            const m = text.match(pattern);
+            if (m) {
+                let year = parseInt(m[3]);
+                if (year < 100) year += 2000;
+                const month = parseInt(m[2]);
+                const day = parseInt(m[1]);
+                if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
+                    const dateStr = `${year}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+                    document.getElementById('dataInput').value = dateStr;
+                    break;
+                }
+            }
+        }
+
+        // ─ Cerca nome (prima riga non vuota significativa)
+        for (const line of lines) {
+            if (line.length > 3 && line.length < 60 && !/^\d/.test(line) && !/[€$£]/.test(line)) {
+                if (document.getElementById('nomeInput').value === '') {
+                    document.getElementById('nomeInput').value = line;
+                }
+                break;
+            }
+        }
+
+        // ─ Indovina categoria
+        const textLower = text.toLowerCase();
+        if (/ristora|trattoria|pizzeria|bar|caffe|cena|pranzo|colazione|mensa|hotel\s+rist/.test(textLower)) {
+            selectCategory('Vitto');
+        } else if (/hotel|albergo|b&b|bed|hostel|soggiorno|camera/.test(textLower)) {
+            selectCategory('Alloggio');
+        } else if (/taxi|uber|treno|trenitalia|italo|autostrada|gasolio|benzina|parcheggio|autobus|bus|aereo|ryanair|easyjet|ita/.test(textLower)) {
+            selectCategory('Trasporto');
+        }
+
+        document.getElementById('ocrStatusText').innerText = 'Fatto! Verifica i campi.';
+        document.getElementById('ocrStatus').classList.remove('hidden');
+        setTimeout(() => document.getElementById('ocrStatus').classList.add('hidden'), 3000);
+    }
+
+    // ─── CATEGORIA ──────────────────────────────────
+    function selectCategory(cat, btn) {
+        document.getElementById('categoriaInput').value = cat;
+        document.querySelectorAll('.category-btn').forEach(b => {
+            b.classList.remove('active');
+            b.classList.remove('bg-primary', 'text-white');
+            b.classList.add('bg-surface-container-low', 'text-on-surface');
+        });
+        const activeBtn = btn || document.getElementById('cat' + cat);
+        if (activeBtn) {
+            activeBtn.classList.add('active');
+            activeBtn.classList.remove('bg-surface-container-low', 'text-on-surface');
+            activeBtn.classList.add('bg-primary', 'text-white');
+        }
+    }
+
+    // ─── SALVA ──────────────────────────────────────
+    async function salvaGiustificativo() {
+        const trasfertaId = document.getElementById('trasfertaSelect').value;
+        const nome = document.getElementById('nomeInput').value.trim();
+        const importo = document.getElementById('importoInput').value.trim();
+        const data = document.getElementById('dataInput').value;
+        const categoria = document.getElementById('categoriaInput').value;
+        const urlParams = new URLSearchParams(window.location.search);
+        const editId = urlParams.get('edit');
+
+        if (!trasfertaId) { alert('Seleziona una trasferta!'); return; }
+        if (!nome || !importo || !data) { alert('Compila Nome, Importo e Data.'); return; }
+
+        // Controllo del formato importo: blocca valori non validi prima di salvare.
+        try { window.parseImporto(importo); }
+        catch (e) { alert(e.message); document.getElementById('importoInput').focus(); return; }
+
+        const btn = document.getElementById('salvaBtn');
+        const btnHtml = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<svg class="spinner w-5 h-5 mr-2" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path></svg> Salvataggio...';
+
+        try {
+            let fotoUrl = null;
+            let fotoDriveId = null;
+
+            // Salva foto su Drive (cartella visibile) se presente
+            if (fotoDataUrl && fotoFilename) {
+                const trasferte = await driveStorage.getTrasferte();
+                const trasferta = trasferte.find(t => t.id === trasfertaId);
+                const nomeTrasferta = trasferta ? trasferta.nome.replace(/[\/\\:*?"<>|]/g, '_') : 'Trasferta';
+
+                const result = await driveStorage.savePhotoToDrive(fotoDataUrl, nomeTrasferta, fotoFilename);
+                fotoUrl = result.url;
+                fotoDriveId = result.id;
+            }
+
+            let giustificativi = await driveStorage.getGiustificativi(trasfertaId);
+
+            if (editId) {
+                const idx = giustificativi.findIndex(x => x.id === editId);
+                if (idx !== -1) {
+                    giustificativi[idx].nome = nome;
+                    giustificativi[idx].importo = importo;
+                    giustificativi[idx].data = data;
+                    giustificativi[idx].categoria = categoria;
+                    if (fotoUrl) {
+                        giustificativi[idx].fotoUrl = fotoUrl;
+                        giustificativi[idx].fotoDriveId = fotoDriveId;
+                    }
+                }
+            } else {
+                giustificativi.push({
+                    id: Date.now().toString(),
+                    nome, importo, data, categoria,
+                    fotoUrl: fotoUrl || null,
+                    fotoDriveId: fotoDriveId || null
+                });
+            }
+
+            await driveStorage.saveGiustificativi(trasfertaId, giustificativi);
+            // Salvataggio confermato da Drive: si passa al dettaglio.
+            window.location.href = `dettaglio_trasferta.html?id=${trasfertaId}`;
+        } catch (e) {
+            // Nessun falso "salvato": ripristina il pulsante e mostra l'errore reale.
+            btn.disabled = false;
+            btn.innerHTML = btnHtml;
+            window.showAppError(e);
+        }
+    }
+</script>
+</body>
+</html>
