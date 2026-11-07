@@ -2,11 +2,11 @@
  * photoViewer.js — visualizzazione del giustificativo (funzione "Vedi foto").
  * La foto viene recuperata da Drive con il token dell'utente (nessuna condivisione pubblica).
  */
-window.mostraFoto = async function(fileId) {
-    if (!fileId) { window.showAppError(new Error('Questo giustificativo non ha una foto associata.')); return; }
+window.mostraFoto = async function(fileId, fotoLocale = null, nomeLocale = null) {
+    if (!fileId && !fotoLocale) { window.showAppError(new Error('Questo giustificativo non ha una foto associata.')); return; }
 
     const existing = document.getElementById('photo-dialog');
-    if (existing) existing.remove();
+    if (existing) existing.close();
 
     const dialog = document.createElement('dialog');
     dialog.id = 'photo-dialog';
@@ -21,7 +21,7 @@ window.mostraFoto = async function(fileId) {
     const area = document.createElement('div');
     area.style.cssText = 'overflow:auto;height:calc(100% - 60px);background:#ddd;text-align:center;touch-action:pan-x pan-y pinch-zoom';
     const status = document.createElement('p');
-    status.textContent = 'Caricamento da Drive…';
+    status.textContent = fotoLocale ? 'Caricamento foto…' : 'Caricamento da Drive…';
     area.appendChild(status);
 
     let blobUrl = null, width = 100;
@@ -39,7 +39,7 @@ window.mostraFoto = async function(fileId) {
     addBtn('+', () => { width = Math.min(500, width + 25); image.style.width = width + '%'; });
     addBtn('Adatta', () => { width = 100; image.style.width = '100%'; });
     const download = addBtn('Scarica originale', () => {}, true);
-    addBtn('Apri su Drive', () => window.open(`https://drive.google.com/file/d/${encodeURIComponent(fileId)}/view`, '_blank', 'noopener,noreferrer'));
+    if (!fotoLocale) addBtn('Apri su Drive', () => window.open(`https://drive.google.com/file/d/${encodeURIComponent(fileId)}/view`, '_blank', 'noopener,noreferrer'));
     addBtn('Chiudi', () => dialog.close());
 
     dialog.append(toolbar, area);
@@ -48,21 +48,23 @@ window.mostraFoto = async function(fileId) {
     dialog.showModal();
 
     try {
-        const blob = await driveStorage.getPhotoBlob(fileId);
+        const blob = fotoLocale || await driveStorage.getPhotoBlob(fileId);
         if (!dialog.isConnected) return;
         blobUrl = URL.createObjectURL(blob);
         image.onerror = () => {
             area.replaceChildren();
             const p = document.createElement('p');
             p.style.cssText = 'padding:20px';
-            p.textContent = 'Il browser non riesce a mostrare questo formato. Usa "Scarica originale" oppure "Apri su Drive".';
+            p.textContent = fotoLocale
+                ? 'Il browser non riesce a mostrare questo formato. Usa "Scarica originale".'
+                : 'Il browser non riesce a mostrare questo formato. Usa "Scarica originale" oppure "Apri su Drive".';
             area.appendChild(p);
         };
         image.src = blobUrl;
         area.replaceChildren(image);
         const ext = ({ 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/heic': 'heic', 'image/heif': 'heif', 'application/pdf': 'pdf' })[(blob.type || '').split(';')[0]] || 'img';
         download.disabled = false;
-        download.onclick = () => { const a = document.createElement('a'); a.href = blobUrl; a.download = `giustificativo_${fileId}.${ext}`; a.click(); };
+        download.onclick = () => { const a = document.createElement('a'); a.href = blobUrl; a.download = nomeLocale || `giustificativo_${fileId}.${ext}`; a.click(); };
     } catch (e) {
         dialog.close();
         window.showAppError(e);
