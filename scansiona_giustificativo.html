@@ -316,6 +316,36 @@
     }
 
     // ─── OCR ────────────────────────────────────────
+
+    // Crea una copia RIDOTTA della foto, usata SOLO per l'OCR.
+    // La foto originale a piena risoluzione (fotoDataUrl) NON viene toccata:
+    // resta quella salvata su Drive e quella mostrata dal pulsante "Vedi foto".
+    // Motivo: Tesseract su un'immagine da molti megapixel è lentissimo e spesso
+    // meno preciso; una copia piccola lo rende veloce e più affidabile.
+    // Il numero sotto e' il lato massimo (in pixel) dell'immagine data all'OCR:
+    // piu' basso = piu' veloce; piu' alto = piu' dettaglio. 1600 e' un buon compromesso.
+    const OCR_LATO_MAX = 1600;
+
+    function creaImmaginePerOCR(dataUrl, latoMax) {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => {
+                // Non ingrandiamo mai una foto gia' piccola (scala max = 1).
+                const scala = Math.min(1, latoMax / Math.max(img.width, img.height));
+                const w = Math.max(1, Math.round(img.width * scala));
+                const h = Math.max(1, Math.round(img.height * scala));
+                const canvas = document.createElement('canvas');
+                canvas.width = w;
+                canvas.height = h;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, w, h);
+                resolve(canvas);
+            };
+            img.onerror = () => reject(new Error('Impossibile preparare l\'immagine per l\'OCR.'));
+            img.src = dataUrl;
+        });
+    }
+
     async function avviaOCR() {
         if (!fotoDataUrl) { alert('Carica prima una foto!'); return; }
 
@@ -326,8 +356,12 @@
         document.getElementById('ocrBtn').disabled = true;
 
         try {
+            // Prepara la copia ridotta (solo per l'OCR). L'originale resta intatto.
+            document.getElementById('ocrStatusText').innerText = 'Preparazione immagine...';
+            const immaginePerOCR = await creaImmaginePerOCR(fotoDataUrl, OCR_LATO_MAX);
+
             document.getElementById('ocrStatusText').innerText = 'Analisi testo...';
-            const { data: { text } } = await Tesseract.recognize(fotoDataUrl, 'ita+eng', {
+            const { data: { text } } = await Tesseract.recognize(immaginePerOCR, 'ita+eng', {
                 logger: m => {
                     if (m.status === 'recognizing text') {
                         document.getElementById('ocrStatusText').innerText =
