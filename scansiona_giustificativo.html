@@ -317,14 +317,20 @@
 
     // ─── OCR ────────────────────────────────────────
 
-    // Crea una copia RIDOTTA della foto, usata SOLO per l'OCR.
-    // La foto originale a piena risoluzione (fotoDataUrl) NON viene toccata:
+    // Crea una copia RIDOTTA e PULITA della foto, usata SOLO per l'OCR.
+    // La foto originale a piena risoluzione e a colori (fotoDataUrl) NON viene toccata:
     // resta quella salvata su Drive e quella mostrata dal pulsante "Vedi foto".
-    // Motivo: Tesseract su un'immagine da molti megapixel è lentissimo e spesso
-    // meno preciso; una copia piccola lo rende veloce e più affidabile.
-    // Il numero sotto e' il lato massimo (in pixel) dell'immagine data all'OCR:
-    // piu' basso = piu' veloce; piu' alto = piu' dettaglio. 1600 e' un buon compromesso.
-    const OCR_LATO_MAX = 1600;
+    // Qui facciamo tre cose, solo sulla copia: (1) ridimensioniamo, (2) mettiamo in
+    // scala di grigi, (3) alziamo un po' il contrasto. Serve a far leggere meglio i
+    // numeri a Tesseract senza aggiungere falsi importi (cambia l'immagine, non la regola).
+    //
+    // Due manopole, facili da ritoccare o azzerare se preferisci tornare indietro:
+    //   OCR_LATO_MAX  = lato massimo in pixel dell'immagine data all'OCR
+    //                   (piu' basso = piu' veloce; piu' alto = piu' dettaglio).
+    //   OCR_CONTRASTO = quanto alzare il contrasto (0 = nessuna pulizia del contrasto;
+    //                   valori tipici 15-35; oltre puo' peggiorare). Con 0 resta solo grigi.
+    const OCR_LATO_MAX = 1900;
+    const OCR_CONTRASTO = 25;
 
     function creaImmaginePerOCR(dataUrl, latoMax) {
         return new Promise((resolve, reject) => {
@@ -339,6 +345,27 @@
                 canvas.height = h;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, w, h);
+
+                // ── Pulizia leggera: scala di grigi + contrasto moderato ──
+                try {
+                    const imgData = ctx.getImageData(0, 0, w, h);
+                    const d = imgData.data;
+                    const c = OCR_CONTRASTO;
+                    const fattore = (259 * (c + 255)) / (255 * (259 - c)); // formula contrasto standard
+                    for (let i = 0; i < d.length; i += 4) {
+                        // grigio percepito
+                        let g = 0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2];
+                        // contrasto attorno al grigio medio (128)
+                        g = fattore * (g - 128) + 128;
+                        g = g < 0 ? 0 : (g > 255 ? 255 : g);
+                        d[i] = d[i + 1] = d[i + 2] = g; // stesso valore sui 3 canali = grigio
+                    }
+                    ctx.putImageData(imgData, 0, 0);
+                } catch (_) {
+                    // Se il browser impedisce la lettura dei pixel, si procede con la foto
+                    // solo ridimensionata: l'OCR funziona comunque, un filo meno preciso.
+                }
+
                 resolve(canvas);
             };
             img.onerror = () => reject(new Error('Impossibile preparare l\'immagine per l\'OCR.'));
