@@ -414,12 +414,14 @@
         const lines = text.split('\n').map(l => l.trim()).filter(Boolean);
         console.log('[OCR] Testo riconosciuto:', text);
 
-        // ─ Cerca importo: riconosce le cifre con due decimali (formato v1.1, affidabile)
-        //   e sceglie la PIÙ ALTA tra quelle trovate (0 < importo < 10000).
+        // ─ Cerca importo: riconosce le cifre con due decimali (es. 57,50) e sceglie
+        //   la PIÙ ALTA tra quelle trovate (0 < importo < 10000).
+        //   I "confini" (?<![\d.,]) ... (?![\d.,]) evitano di agganciare un pezzo che
+        //   sta DENTRO un numero più lungo (es. da "6821434348" non estrae "6821,43").
         //   Nota: sugli scontrini con resto in contanti il più alto può essere il
         //   contante versato e non il totale: l'importo va sempre verificato.
         const importiTrovati = [];
-        const regexImporto = /\d+[.,]\d{2}/g;
+        const regexImporto = /(?<![\d.,])\d+[.,]\d{2}(?![\d.,])/g;
         let occ;
         while ((occ = regexImporto.exec(text)) !== null) {
             const val = parseFloat(occ[0].replace(',', '.'));
