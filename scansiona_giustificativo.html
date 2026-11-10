@@ -317,20 +317,18 @@
 
     // ─── OCR ────────────────────────────────────────
 
-    // Crea una copia RIDOTTA e PULITA della foto, usata SOLO per l'OCR.
+    // Crea una copia RIDOTTA della foto, usata SOLO per l'OCR.
     // La foto originale a piena risoluzione e a colori (fotoDataUrl) NON viene toccata:
     // resta quella salvata su Drive e quella mostrata dal pulsante "Vedi foto".
-    // Qui facciamo tre cose, solo sulla copia: (1) ridimensioniamo, (2) mettiamo in
-    // scala di grigi, (3) alziamo un po' il contrasto. Serve a far leggere meglio i
-    // numeri a Tesseract senza aggiungere falsi importi (cambia l'immagine, non la regola).
+    // Qui si fa UNA cosa sola: ridimensionare. Niente pulizia/filtri sull'immagine,
+    // per tenerla semplice, veloce e uguale su tutti i telefoni (sui test i numeri
+    // si leggono bene anche senza pulizia).
     //
-    // Due manopole, facili da ritoccare o azzerare se preferisci tornare indietro:
-    //   OCR_LATO_MAX  = lato massimo in pixel dell'immagine data all'OCR
-    //                   (piu' basso = piu' veloce; piu' alto = piu' dettaglio).
-    //   OCR_CONTRASTO = quanto alzare il contrasto, col filtro NATIVO del browser
-    //                   (1 = nessun contrasto in piu'; 1.2 = +20%; con 1 restano solo i grigi).
+    //   OCR_LATO_MAX = lato massimo in pixel dell'immagine data all'OCR
+    //                  (piu' basso = piu' veloce; piu' alto = piu' dettaglio).
+    //   Nota: a 1600 i nomi scritti piccoli (es. l'intestazione) venivano letti
+    //   storpiati; a 1900 si leggono bene. Gli importi (testo grande) vanno bene comunque.
     const OCR_LATO_MAX = 1900;
-    const OCR_CONTRASTO = 1.2;
 
     function creaImmaginePerOCR(dataUrl, latoMax) {
         return new Promise((resolve, reject) => {
@@ -343,16 +341,7 @@
                 const canvas = document.createElement('canvas');
                 canvas.width = w;
                 canvas.height = h;
-                const ctx = canvas.getContext('2d');
-
-                // ── Pulizia leggera e VELOCE: grigi + contrasto fatti dal filtro
-                //    NATIVO del browser (non piu' un ciclo pixel-per-pixel: stesso
-                //    risultato, molto piu' rapido). Un browser datato che non supporta
-                //    il filtro lo ignora e usa la foto solo ridimensionata: l'OCR va comunque.
-                try { ctx.filter = 'grayscale(1) contrast(' + OCR_CONTRASTO + ')'; } catch (_) {}
-                ctx.drawImage(img, 0, 0, w, h);
-                ctx.filter = 'none';
-
+                canvas.getContext('2d').drawImage(img, 0, 0, w, h);
                 resolve(canvas);
             };
             img.onerror = () => reject(new Error('Impossibile preparare l\'immagine per l\'OCR.'));
